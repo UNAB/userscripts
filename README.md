@@ -1,7 +1,7 @@
 Userscripts
 ===========
 
-Scripts para alternar el comportamiento de páginas web UNAB.
+Scripts para mejorar la experiencia de navegación en sitios UNAB.
 
 Instalación
 -----------
