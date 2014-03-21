@@ -9,12 +9,50 @@
 // @version        dev-master
 // ==/UserScript==
 
+/**
+ * Workflow UserScript
+ * Copyright (C) Esteban De La Fuente Rubio, DeLaF (esteban[at]delaf.cl)
+ *
+ * Este programa es software libre: usted puede redistribuirlo y/o
+ * modificarlo bajo los términos de la Licencia Pública General GNU
+ * publicada por la Fundación para el Software Libre, ya sea la versión
+ * 3 de la Licencia, o (a su elección) cualquier versión posterior de la
+ * misma.
+ *
+ * Este programa se distribuye con la esperanza de que sea útil, pero
+ * SIN GARANTÍA ALGUNA; ni siquiera la garantía implícita
+ * MERCANTIL o de APTITUD PARA UN PROPÓSITO DETERMINADO.
+ * Consulte los detalles de la Licencia Pública General GNU para obtener
+ * una información más detallada.
+ *
+ * Debería haber recibido una copia de la Licencia Pública General GNU
+ * junto a este programa.
+ * En caso contrario, consulte <http://www.gnu.org/licenses/gpl.html>.
+ */
+
+/**
+ * Para el uso del script se recomienda utilizar la extensión Tampermonkey
+ * disponible en <http://tampermonkey.net>
+ * 
+ * DISCLAIMER: El siguiente script interviene el código HTML una vez ha sido
+ * descargado y ya renderizado en el navegador del usuario. NO SE CONECTA NI
+ * INTERACTÚA DIRECTAMENTE DE NINGUNA FORMA CON EL SERVIDOR desde donde la web
+ * es obtenida. Tampoco accede a datos del servidor de una forma que no sea la
+ * ya entregada por la aplicación original, solo se simulan eventos que un
+ * usuario podría realizar de forma manual (haciendo varios clicks por ejemplo)
+ * con el objetivo de que dicho usuario reduzca su tiempo en el uso de la
+ * interfaz original. Finalmente, EL AUTOR NO PUEDE NI SERÁ RESPONSABLE por el
+ * uso que se de a este script, cada usuario deberá verificar por su cuenta los
+ * datos antes de enviar los formularios. El usuario en cualquier momento podrá
+ * deshabilitar, e incluso desintalar, el script de su navegador.
+ */
+
 var config = {
     'routes': {
         '/Default.aspx': 'default',
         '/Inscripcion.aspx': 'inscripcion',
         '/Inscripcion2.aspx': 'inscripcion'
-        },
+    },
     'pages': {
         'inscripcion': {
             'tables' : {
@@ -43,7 +81,7 @@ function Workflow ()
 
 Workflow.bootstrap = function ()
 {
-        Workflow.createHeader ();
+    Workflow.createHeader ();
     Workflow['bootstrap_'+config.routes[window.location.pathname]] ();
 }
 
@@ -70,7 +108,6 @@ Workflow.bootstrap_default = function ()
 Workflow.solicitud_abrir = function (evt) {
     $('a[href='+evt.target.href+']').parent().parent().remove();
     var params = evt.target.href.replace("javascript:Workflow.solicitud_abrir('", '').replace("'); return false", '').split("','");
-    //__EVENTTARGET, __EVENTARGUMENT
     $('#n_solicitudes').text($('#n_solicitudes').text()-1);
     window.openPost (
         $('#ctl01').attr('action'),
