@@ -59,7 +59,7 @@ var config = {
                 'ramos': {
                     'vacantes': {
                         '/Inscripcion.aspx': 13,
-                                '/Inscripcion2.aspx': 9
+                        '/Inscripcion2.aspx': 9
                     }
                 }
             },
