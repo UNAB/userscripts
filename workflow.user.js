@@ -33,7 +33,7 @@
 /**
  * Para el uso del script se recomienda utilizar la extensión Tampermonkey
  * disponible en <http://tampermonkey.net>
- * 
+ *
  * DISCLAIMER: El siguiente script interviene el código HTML una vez ha sido
  * descargado y ya renderizado en el navegador del usuario. NO SE CONECTA NI
  * INTERACTÚA DIRECTAMENTE DE NINGUNA FORMA CON EL SERVIDOR desde donde la web
@@ -66,7 +66,8 @@ var config = {
             'messages': {
                 'responsabilidad': 'Se acepta bajo exclusiva responsabilidad del alumno.',
                 'novacantes': '\n\nRamos no inscritos es porque NRC especificados no disponían de vacantes.',
-                'ningunavacante': 'Se rechaza solicitud puesto que NRC(s) solicitado(s) no tiene(n) vatante(s).'
+                'ningunavacante': 'Se rechaza solicitud puesto que NRC(s) solicitado(s) no tiene(n) vatante(s).',
+                'rechazada': 'Se rechaza la solicitud.'
             },
             'errors': {
                 'nocompletada': 'the work item is not in a state that allows completion'
@@ -124,20 +125,28 @@ Workflow.bootstrap_inscripcion = function ()
 {
     // modificar la página
     $('#Workflow_header').append('<input type="button" id="aceptarRamos" value="Aceptar todos los ramos con vacantes" accesskey="a" /> ');
+    $('#Workflow_header').append('<input type="button" id="rechazarRamos" value="Rechazar todos los ramos" accesskey="r" /> ');
     $('#Workflow_header').append('<input type="button" id="completarSolicitud" value="Completar la solicitud" accesskey="c" /> ');
     $('#Workflow_header').append('<a href="'+$('a[target=blank]').attr('href')+'" target="_blank" style="color:orange;text-decoration:underline">FICHA DEL ALUMNO</a> ');
     $("html, body").animate({ scrollTop: $('#MainContent_LblSolicitud').parent().parent().parent().parent().parent().parent().offset().top }, 500);
     $("#aceptarRamos").click (Workflow.Inscripcion_aceptarRamos);
+    $("#rechazarRamos").click (Workflow.Inscripcion_rechazarRamos);
     $("#completarSolicitud").click (Workflow.Inscripcion_completarSolicitud);
+    // mostrar "otros horarios"
+    /*$('#MainContent_GridInsc tr:gt(0)').each(function () {
+        $('td:eq(1) input', this).click();
+    });*/
     // detectar si hubo error al completar la solicitud y hacer click nuevamente para volver a completar
     if ($('#MainContent_V_ERROR').length &&  $('#MainContent_V_ERROR').text()==config.pages.inscripcion.errors.nocompletada) {
-        console.log ('Hubo error al completar, reintentando...');
+        $("html, body").animate({ scrollTop: $('#MainContent_V_ERROR').offset().top }, 500);
         $('#MainContent_Completar').click();
     }
 }
 
 Workflow.Inscripcion_aceptarRamos = function ()
 {
+    $("#aceptarRamos").attr("disabled", "disabled");
+    $("#rechazarRamos").attr("disabled", "disabled");
     if ($('#MainContent_ButtonInsc').is(':disabled')==false) {
         var ramos = 0;
         var aceptados = 0;
@@ -161,9 +170,19 @@ Workflow.Inscripcion_aceptarRamos = function ()
     }
 }
 
+Workflow.Inscripcion_rechazarRamos = function ()
+{
+    $("#aceptarRamos").attr("disabled", "disabled");
+    $("#rechazarRamos").attr("disabled", "disabled");
+    if ($('#MainContent_ButtonInsc').is(':disabled')==false) {
+        $('#MainContent_ButtonInsc').click();
+            $('#MainContent_ComentArea').text(config.pages.inscripcion.messages.rechazada);
+    }
+}
+
 Workflow.Inscripcion_completarSolicitud = function ()
 {
-        $('#MainContent_Completar').click();
+    $('#MainContent_Completar').click();
 }
 
 // lanzar bootstrap
@@ -171,6 +190,10 @@ $(function(){
     Workflow.bootstrap ();
 });
 
+/**
+ * Función para enviar un formulario por POST abriéndolo en
+ * una nueva ventana.
+ */
 window.openPost = function(url, variables)
 {
     var form = document.createElement("form");
