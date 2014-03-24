@@ -49,9 +49,9 @@
 
 var config = {
     'routes': {
-        '/Default.aspx': 'default',
-        '/Inscripcion.aspx': 'inscripcion',
-        '/Inscripcion2.aspx': 'inscripcion'
+        '/default.aspx': 'default',
+        '/inscripcion.aspx': 'inscripcion',
+        '/inscripcion2.aspx': 'inscripcion'
     },
     'pages': {
         'inscripcion': {
@@ -64,7 +64,7 @@ var config = {
                 }
             },
             'messages': {
-                'responsabilidad': 'Se acepta bajo exclusiva responsabilidad del alumno.',
+                'responsabilidad': 'Se acepta bajo exclusiva responsabilidad del alumno(a).',
                 'novacantes': '\n\nRamos no inscritos es porque NRC especificados no disponían de vacantes.',
                 'ningunavacante': 'Se rechaza solicitud puesto que NRC(s) solicitado(s) no tiene(n) vatante(s).',
                 'rechazada': 'Se rechaza la solicitud.'
@@ -83,7 +83,7 @@ function Workflow ()
 Workflow.bootstrap = function ()
 {
     Workflow.createHeader ();
-    Workflow['bootstrap_'+config.routes[window.location.pathname]] ();
+    Workflow['bootstrap_'+config.routes[window.location.pathname.toLowerCase()]] ();
 }
 
 Workflow.createHeader = function ()
@@ -96,14 +96,55 @@ Workflow.createHeader = function ()
 
 Workflow.bootstrap_default = function ()
 {
+    var filtroSolicitudes = new Array ();
     var n_solicitudes = 0;
     $("#MainContent_GridView1").dataTable().fnDestroy();
     $("#MainContent_GridView1 tbody tr > td > a").each(function () {
+        // extraer datos del enlace
+        var data = $(this).text().split('-');
+        var solicitud = data[0];
+        var run = data[1].split(' ')[0];
+        var alumno = data[1].split(/ (.+)/)[1];
+        var periodo = data[2];
+        var folio = data[3];
+        // agregar datos a los filtros
+        if ($.inArray(solicitud, filtroSolicitudes)==-1)
+                filtroSolicitudes.push(solicitud);
+        // agregar título al enlace con los datos ordenados de la solicitud
+        $(this).attr('title', 'FOLIO: '+folio+'\nPERÍODO: '+periodo+'\nSOLICITUD: '+solicitud+'\nALUMNO: '+alumno+' ('+run+')');
+        // cambiar comportamiento del enlace
         $(this).attr('href', $(this).attr('href').replace('__doPostBack', 'Workflow.solicitud_abrir')+'; return false');
         $(this).click (Workflow.solicitud_abrir);
+        // sumar solicitudes
         n_solicitudes++;
     });
-    $('#Workflow_header').append('<br />Solicitudes = <span id="n_solicitudes">'+n_solicitudes+'</span>');
+    // mostrar total de solicitudes pendientes
+    $('#Workflow_header').append('Solicitudes = <span id="n_solicitudes">'+n_solicitudes+'</span><br />');
+    // crear filtros
+    $('#Workflow_header').append('Filtros: ');
+    filtroSolicitudes.sort();
+    $('#Workflow_header').append('<select id="filtroSolicitudes" name="filtroSolicitudes">');
+    $('#filtroSolicitudes').change(Workflow.Solicitudes_filtrarPorSolicitud);
+    $('#filtroSolicitudes').append('<option value="">Seleccionar un tipo de solicitud para filtrar</option>');
+    for(solicitud in filtroSolicitudes) {
+        $('#filtroSolicitudes').append('<option value="'+filtroSolicitudes[solicitud]+'">'+filtroSolicitudes[solicitud]+'</option>');
+    }
+    $('#Workflow_header').append('</select>');
+}
+
+Workflow.Solicitudes_filtrarPorSolicitud = function () {
+    var n_solicitudes = 0;
+    var filtro = $("#filtroSolicitudes").val();
+        $("#MainContent_GridView1 tbody tr > td > a").each(function () {
+        var solicitud = $(this).text().split('-')[0];
+        if (solicitud==filtro || filtro=='') {
+                n_solicitudes++;
+            $(this).parent().parent().css('display', 'table-row');
+        } else {
+            $(this).parent().parent().css('display', 'none');
+        }
+    });
+    $('#n_solicitudes').text(n_solicitudes);
 }
 
 Workflow.solicitud_abrir = function (evt) {
