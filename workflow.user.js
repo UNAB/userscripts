@@ -58,7 +58,7 @@ function __ ()
  */
 __.bootstrap = function (config)
 {
-        config.always();
+    config.always();
     try {
         config.routes[window.location.pathname.toLowerCase()]();
     } catch (error) {
@@ -151,7 +151,7 @@ Workflow.Solicitudes_bootstrap = function ()
         var folio = data[3];
         // agregar datos a los filtros
         if ($.inArray(solicitud, filtroSolicitudes)==-1)
-                filtroSolicitudes.push(solicitud);
+            filtroSolicitudes.push(solicitud);
         // agregar título al enlace con los datos ordenados de la solicitud
         $(this).attr('title', 'FOLIO: '+folio+'\nPERÍODO: '+periodo+'\nSOLICITUD: '+solicitud+'\nALUMNO: '+alumno+' ('+run+')');
         // cambiar comportamiento del enlace
@@ -181,7 +181,7 @@ Workflow.Solicitudes_filtrarPorSolicitud = function ()
         $("#MainContent_GridView1 tbody tr > td > a").each(function () {
         var solicitud = $(this).text().split('-')[0];
         if (solicitud==filtro || filtro=='') {
-                n_solicitudes++;
+            n_solicitudes++;
             $(this).parent().parent().css('display', 'table-row');
         } else {
             $(this).parent().parent().css('display', 'none');
@@ -252,10 +252,10 @@ Workflow.Inscripcion_aceptar = function ()
         });
         $('#MainContent_ButtonInsc').click();
         if (aceptados>0) {
-                $('#MainContent_ComentArea').text(config.pages.inscripcion.messages.aceptada);
-                if (ramos!=aceptados) {
-                    $('#MainContent_ComentArea').text($('#MainContent_ComentArea').text()+config.pages.inscripcion.messages.novacantes);
-                }
+            $('#MainContent_ComentArea').text(config.pages.inscripcion.messages.aceptada);
+            if (ramos!=aceptados) {
+                $('#MainContent_ComentArea').text($('#MainContent_ComentArea').text()+config.pages.inscripcion.messages.novacantes);
+            }
         } else {
             $('#MainContent_ComentArea').text(config.pages.inscripcion.messages.ningunavacante);
         }
