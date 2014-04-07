@@ -47,12 +47,51 @@
  * deshabilitar, e incluso desintalar, el script de su navegador.
  */
 
+/*****************************************************************************/
+
+function __ ()
+{
+}
+
+/**
+ * Función que lanza un script dependiendo de la página que se está viendo
+ */
+__.bootstrap = function (config)
+{
+        config.always();
+    try {
+        config.routes[window.location.pathname.toLowerCase()]();
+    } catch (error) {
+        console.log(
+            'No existe acción a ejecutar para la página '+
+            window.location.pathname
+        );
+    }
+}
+
+/**
+ * Función para enviar un formulario por POST
+ */
+window.openPost = function(url, variables, newWindow)
+{
+    var form = document.createElement('form');
+    form.setAttribute('method', 'post');
+    form.setAttribute('action', url);
+    if (typeof(newWindow)!=='undefined')
+        form.setAttribute('target', '_blank');
+    for (variable in variables) {
+        var hiddenField = document.createElement('input');
+        hiddenField.setAttribute('type', 'hidden');
+        hiddenField.setAttribute('name', variable);
+        hiddenField.setAttribute('value', variables[variable]);
+        form.appendChild(hiddenField);
+    }
+    form.submit();
+}
+
+/*****************************************************************************/
+
 var config = {
-    'routes': {
-        '/default.aspx': 'default',
-        '/inscripcion.aspx': 'inscripcion',
-        '/inscripcion2.aspx': 'inscripcion'
-    },
     'pages': {
         'inscripcion': {
             'tables' : {
@@ -64,26 +103,29 @@ var config = {
                 }
             },
             'messages': {
-                'responsabilidad': 'Se acepta bajo exclusiva responsabilidad del alumno(a).',
-                'novacantes': '\n\nRamos no inscritos es porque NRC especificados no disponían de vacantes.',
-                'ningunavacante': 'Se rechaza solicitud puesto que NRC(s) solicitado(s) no tiene(n) vatante(s).',
-                'rechazada': 'Se rechaza la solicitud.'
+                'aceptada': 'Se acepta la inscripción bajo exclusiva responsabilidad del alumno(a).',
+                'rechazada': 'Se rechaza la solicitud de inscripción de asignatura(s).',
+                'novacantes': '\n\nRamo(s) no inscrito(s) es porque NRC(s) especificado(s) no disponía(n) de vacante(s).',
+                'ningunavacante': 'Se rechaza solicitud puesto que NRC(s) solicitado(s) no tiene(n) vacante(s).'
+            },
+            'errors': {
+                'nocompletada': 'the work item is not in a state that allows completion'
+            }
+        },
+        'eliminacion': {
+            'messages': {
+                'aceptada': 'Se acepta la eliminación bajo exclusiva responsabilidad del alumno(a).',
+                'rechazada': 'Se rechaza la solicitud de eliminación de asignatura.'
             },
             'errors': {
                 'nocompletada': 'the work item is not in a state that allows completion'
             }
         }
     }
-};
+}
 
 function Workflow ()
 {
-}
-
-Workflow.bootstrap = function ()
-{
-    Workflow.createHeader ();
-    Workflow['bootstrap_'+config.routes[window.location.pathname.toLowerCase()]] ();
 }
 
 Workflow.createHeader = function ()
@@ -94,7 +136,7 @@ Workflow.createHeader = function ()
     $('#Workflow_header').append('Workflow: ');
 }
 
-Workflow.bootstrap_default = function ()
+Workflow.Solicitudes_bootstrap = function ()
 {
     var filtroSolicitudes = new Array ();
     var n_solicitudes = 0;
@@ -113,8 +155,8 @@ Workflow.bootstrap_default = function ()
         // agregar título al enlace con los datos ordenados de la solicitud
         $(this).attr('title', 'FOLIO: '+folio+'\nPERÍODO: '+periodo+'\nSOLICITUD: '+solicitud+'\nALUMNO: '+alumno+' ('+run+')');
         // cambiar comportamiento del enlace
-        $(this).attr('href', $(this).attr('href').replace('__doPostBack', 'Workflow.solicitud_abrir')+'; return false');
-        $(this).click (Workflow.solicitud_abrir);
+        $(this).attr('href', $(this).attr('href').replace('__doPostBack', 'Workflow.Solicitudes_abrirSolicitud')+'; return false');
+        $(this).click (Workflow.Solicitudes_abrirSolicitud);
         // sumar solicitudes
         n_solicitudes++;
     });
@@ -132,7 +174,8 @@ Workflow.bootstrap_default = function ()
     $('#Workflow_header').append('</select>');
 }
 
-Workflow.Solicitudes_filtrarPorSolicitud = function () {
+Workflow.Solicitudes_filtrarPorSolicitud = function ()
+{
     var n_solicitudes = 0;
     var filtro = $("#filtroSolicitudes").val();
         $("#MainContent_GridView1 tbody tr > td > a").each(function () {
@@ -147,9 +190,10 @@ Workflow.Solicitudes_filtrarPorSolicitud = function () {
     $('#n_solicitudes').text(n_solicitudes);
 }
 
-Workflow.solicitud_abrir = function (evt) {
+Workflow.Solicitudes_abrirSolicitud = function (evt)
+{
     $('a[href='+evt.target.href+']').parent().parent().remove();
-    var params = evt.target.href.replace("javascript:Workflow.solicitud_abrir('", '').replace("'); return false", '').split("','");
+    var params = evt.target.href.replace("javascript:Workflow.Solicitudes_abrirSolicitud('", '').replace("'); return false", '').split("','");
     $('#n_solicitudes').text($('#n_solicitudes').text()-1);
     window.openPost (
         $('#ctl01').attr('action'),
@@ -158,21 +202,28 @@ Workflow.solicitud_abrir = function (evt) {
             '__EVENTVALIDATION': $('#__EVENTVALIDATION').attr('value'),
             '__EVENTTARGET': params[0],
             '__EVENTARGUMENT': params[1]
-        }
+        },
+        '_blank'
     );
 }
 
-Workflow.bootstrap_inscripcion = function ()
+Workflow.Inscripcion_bootstrap = function ()
 {
+    // si es página de eliminación se carga ese bootstrap
+    if ($('#MainContent_LblTitulo').text()==='ELIMINACION DE ASIGNATURAS') {
+        Workflow.Eliminacion_bootstrap();
+        return;
+    }
+    // ejecutar bootstrap de inscripción
     // modificar la página
     $('#Workflow_header').append('<input type="button" id="aceptarRamos" value="Aceptar todos los ramos con vacantes" accesskey="a" /> ');
     $('#Workflow_header').append('<input type="button" id="rechazarRamos" value="Rechazar todos los ramos" accesskey="r" /> ');
     $('#Workflow_header').append('<input type="button" id="completarSolicitud" value="Completar la solicitud" accesskey="c" /> ');
     $('#Workflow_header').append('<a href="'+$('a[target=blank]').attr('href')+'" target="_blank" style="color:orange;text-decoration:underline">FICHA DEL ALUMNO</a> ');
     $("html, body").animate({ scrollTop: $('#MainContent_LblSolicitud').parent().parent().parent().parent().parent().parent().offset().top }, 500);
-    $("#aceptarRamos").click (Workflow.Inscripcion_aceptarRamos);
-    $("#rechazarRamos").click (Workflow.Inscripcion_rechazarRamos);
-    $("#completarSolicitud").click (Workflow.Inscripcion_completarSolicitud);
+    $("#aceptarRamos").click (Workflow.Inscripcion_aceptar);
+    $("#rechazarRamos").click (Workflow.Inscripcion_rechazar);
+    $("#completarSolicitud").click (Workflow.completarSolicitud);
     // mostrar "otros horarios"
     /*$('#MainContent_GridInsc tr:gt(0)').each(function () {
         $('td:eq(1) input', this).click();
@@ -184,7 +235,7 @@ Workflow.bootstrap_inscripcion = function ()
     }
 }
 
-Workflow.Inscripcion_aceptarRamos = function ()
+Workflow.Inscripcion_aceptar = function ()
 {
     $("#aceptarRamos").attr("disabled", "disabled");
     $("#rechazarRamos").attr("disabled", "disabled");
@@ -201,9 +252,9 @@ Workflow.Inscripcion_aceptarRamos = function ()
         });
         $('#MainContent_ButtonInsc').click();
         if (aceptados>0) {
-                $('#MainContent_ComentArea').text(config.pages.inscripcion.messages.responsabilidad);
+                $('#MainContent_ComentArea').text(config.pages.inscripcion.messages.aceptada);
                 if (ramos!=aceptados) {
-                $('#MainContent_ComentArea').text($('#MainContent_ComentArea').text()+config.pages.inscripcion.messages.novacantes);
+                    $('#MainContent_ComentArea').text($('#MainContent_ComentArea').text()+config.pages.inscripcion.messages.novacantes);
                 }
         } else {
             $('#MainContent_ComentArea').text(config.pages.inscripcion.messages.ningunavacante);
@@ -211,42 +262,68 @@ Workflow.Inscripcion_aceptarRamos = function ()
     }
 }
 
-Workflow.Inscripcion_rechazarRamos = function ()
+Workflow.Inscripcion_rechazar = function ()
 {
     $("#aceptarRamos").attr("disabled", "disabled");
     $("#rechazarRamos").attr("disabled", "disabled");
     if ($('#MainContent_ButtonInsc').is(':disabled')==false) {
         $('#MainContent_ButtonInsc').click();
-            $('#MainContent_ComentArea').text(config.pages.inscripcion.messages.rechazada);
+        $('#MainContent_ComentArea').text(config.pages.inscripcion.messages.rechazada);
     }
 }
 
-Workflow.Inscripcion_completarSolicitud = function ()
+Workflow.completarSolicitud = function ()
 {
     $('#MainContent_Completar').click();
 }
 
-// lanzar bootstrap
-$(function(){
-    Workflow.bootstrap ();
-});
-
-/**
- * Función para enviar un formulario por POST abriéndolo en
- * una nueva ventana.
- */
-window.openPost = function(url, variables)
+Workflow.Eliminacion_bootstrap = function ()
 {
-    var form = document.createElement("form");
-    form.setAttribute("method", "post");
-    form.setAttribute("action", url);
-    form.setAttribute("target", "_blank");
-    for(variable in variables) {
-        var hiddenField = document.createElement("input");
-        hiddenField.setAttribute("type", "hidden");
-        hiddenField.setAttribute("name", variable);
-        hiddenField.setAttribute("value", variables[variable]);
-        form.appendChild(hiddenField);
+    // modificar la página
+    $('#Workflow_header').append('<input type="button" id="aceptarEliminacion" value="Aceptar eliminación" accesskey="a" /> ');
+    $('#Workflow_header').append('<input type="button" id="rechazarEliminacion" value="Rechazar eliminación" accesskey="r" /> ');
+    $('#Workflow_header').append('<input type="button" id="completarSolicitud" value="Completar la solicitud" accesskey="c" /> ');
+    $('#Workflow_header').append('<a href="'+$('a[target=blank]').attr('href')+'" target="_blank" style="color:orange;text-decoration:underline">FICHA DEL ALUMNO</a> ');
+    $("html, body").animate({ scrollTop: $('#MainContent_LblSolicitud').parent().parent().parent().parent().parent().parent().offset().top }, 500);
+    $("#aceptarEliminacion").click (Workflow.Eliminacion_aceptar);
+    $("#rechazarEliminacion").click (Workflow.Eliminacion_rechazar);
+    $("#completarSolicitud").click (Workflow.completarSolicitud);
+    // detectar si hubo error al completar la solicitud y hacer click nuevamente para volver a completar
+    if ($('#MainContent_V_ERROR').length &&  $('#MainContent_V_ERROR').text()==config.pages.eliminacion.errors.nocompletada) {
+        $("html, body").animate({ scrollTop: $('#MainContent_V_ERROR').offset().top }, 500);
+        $('#MainContent_Completar').click();
     }
-    form.submit();
 }
+
+Workflow.Eliminacion_aceptar = function ()
+{
+    $("#aceptarEliminacion").attr("disabled", "disabled");
+    $("#rechazarEliminacion").attr("disabled", "disabled");
+    if ($('#MainContent_ButtonInsc').is(':disabled')==false) {
+        $('#MainContent_GridInsc tr:gt(0)').each(function () {
+            $('input[type=checkbox]:eq(0)', this).attr('checked', 'checked');
+        });
+        $('#MainContent_ButtonInsc').click();
+        $('#MainContent_ComentArea').text(config.pages.eliminacion.messages.aceptada);
+    }
+}
+
+Workflow.Eliminacion_rechazar = function ()
+{
+    $("#aceptarEliminacion").attr("disabled", "disabled");
+    $("#rechazarEliminacion").attr("disabled", "disabled");
+    if ($('#MainContent_ButtonInsc').is(':disabled')==false) {
+        $('#MainContent_ButtonInsc').click();
+        $('#MainContent_ComentArea').text(config.pages.eliminacion.messages.rechazada);
+    }
+}
+
+// ejecutar userscript
+__.bootstrap ({
+    'always': Workflow.createHeader,
+    'routes': {
+        '/default.aspx': Workflow.Solicitudes_bootstrap,
+        '/inscripcion.aspx': Workflow.Inscripcion_bootstrap,
+        '/inscripcion2.aspx': Workflow.Inscripcion_bootstrap
+    },
+});
